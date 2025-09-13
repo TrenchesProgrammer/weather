@@ -11,7 +11,7 @@ export default function Home() {
         <h1
           className={`text-5xl font-bold ${bricolageGrotesque.className} text-center `}
         >
-          How's the sky looking today?
+          How&#39;s the sky looking today?
         </h1>
       </div>
       <form className="flex justify-center gap-3 w-full  mt-12 flex-col sm:flex-row px-5 max-w-3xl m-auto">
