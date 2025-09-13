@@ -15,6 +15,8 @@
 
 /* Background Image */
   --background-image-search: url("/icon-search.svg");
+  --background-image-today-large: url("/bg-today-large.svg");
+  --background-image-today-small: url("/bg-today-small.svg");
 
 }
 
