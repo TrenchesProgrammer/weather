@@ -1,9 +1,4 @@
-import localFont from "next/font/local";
 import { DM_Sans, Bricolage_Grotesque } from "next/font/google";
-const dmSans = DM_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "700"],
-});
 
 const bricolageGrotesque = Bricolage_Grotesque({
   subsets: ["latin"],
