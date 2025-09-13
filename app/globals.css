@@ -11,7 +11,10 @@
   --color-orange-500: #FF820A;
   --color-neutral-700: #302F4A;
   --color-neutral-900: #02012C;
+  --color-blue-500: #4658D9;
 
+/* Background Image */
+  --background-image-search: url("/icon-search.svg");
 
 }
 
@@ -20,4 +23,11 @@
 body {
   color:var(--color-neutral-0);
   background:var(--color-neutral-900);
+}
+
+.bg-search{
+  background-image: var(--background-image-search);
+  background-repeat: no-repeat;
+  background-position: left 1rem center;
+  background-size: 1.5rem;
 }
