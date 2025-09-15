@@ -1,14 +1,27 @@
+"use client";
 import DailyForecast from "@/Components/DailyForecast";
 import HourlyForecast from "@/Components/HourlyForecast";
 import Instruments from "@/Components/Instruments";
 import { Bricolage_Grotesque } from "next/font/google";
 import Image from "next/image";
+import { useEffect } from "react";
+
 
 const bricolageGrotesque = Bricolage_Grotesque({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
 });
 export default function Home() {
+  useEffect(() => {
+      navigator.geolocation.getCurrentPosition(function (position) {
+    const latitude = position.coords.latitude;
+    const longitude = position.coords.longitude;
+    console.log("Latitude is :", latitude);
+    console.log("Longitude is :", longitude);
+  });
+  }, 
+  []);
+
   return (
     <>
       <div className="px-10 mt-10">
@@ -21,12 +34,12 @@ export default function Home() {
       <form className="flex justify-center gap-3 w-full  mt-12 flex-col sm:flex-row px-5 max-w-3xl m-auto">
         <input
           type="text"
-          className="bg-neutral-800 rounded-xl sm:w-[70%] w-[100%] bg-search  placeholder:text-neutral-200 px-12 p-3 "
+          className="bg-neutral-800 hover:bg-neutral-700 cursor-pointer rounded-xl sm:w-[70%] w-[100%] bg-search  placeholder:text-neutral-200 px-12 p-3 "
           placeholder="Search for a place"
         />
         <input
           type="submit"
-          className="bg-[#4658D9] rounded-xl sm:w-[30%] w-[100%] p-3"
+          className="bg-[#4658D9] hover:bg-[#2B1B9C] cursor-pointer rounded-xl sm:w-[30%] w-[100%] p-3"
           value="Search"
         />
       </form>
