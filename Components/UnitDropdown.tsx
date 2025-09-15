@@ -2,7 +2,7 @@ import React from "react";
 
 const UnitDropdown = () => {
   return (
-    <div className="absolute rounded-lg p-3 flex-col gap-1  text-md  -bottom-70 flex text-left right-0 w-50 border border-neutral-600 bg-neutral-700">
+    <div className="absolute rounded-lg p-3 flex-col gap-1 z-1 text-md  -bottom-77 flex text-left right-0 w-50 border border-neutral-600 bg-neutral-700">
       <p>Switch to imperial</p>
       <p className="text-neutral-400 text-sm">Temperature</p>
       <p>Celcius(&#176;C)</p>

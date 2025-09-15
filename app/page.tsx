@@ -1,26 +1,46 @@
 "use client";
 import DailyForecast from "@/Components/DailyForecast";
+import DayDropdown from "@/Components/DayDropdown";
 import HourlyForecast from "@/Components/HourlyForecast";
 import Instruments from "@/Components/Instruments";
 import { Bricolage_Grotesque } from "next/font/google";
 import Image from "next/image";
-import { useEffect } from "react";
-
+import { useEffect, useRef, useState } from "react";
 
 const bricolageGrotesque = Bricolage_Grotesque({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
 });
 export default function Home() {
+  const [unitsDropdown, setUnitsDropdown] = useState(false); // visible or not
+  const [locked, setLocked] = useState(false); // locked by click
+  const dropdownRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-      navigator.geolocation.getCurrentPosition(function (position) {
-    const latitude = position.coords.latitude;
-    const longitude = position.coords.longitude;
-    console.log("Latitude is :", latitude);
-    console.log("Longitude is :", longitude);
-  });
-  }, 
-  []);
+    navigator.geolocation.getCurrentPosition(function (position) {
+      const latitude = position.coords.latitude;
+      const longitude = position.coords.longitude;
+    });
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setUnitsDropdown(false);
+        setLocked(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+  const handleClick = () => {
+    if (locked) {
+      setLocked(false);
+      setUnitsDropdown(false);
+    } else {
+      setLocked(true);
+      setUnitsDropdown(true);
+    }
+  };
 
   return (
     <>
@@ -83,27 +103,39 @@ export default function Home() {
         <div className=" bg-neutral-800 lg:w-[35%] w-[100%] rounded-3xl px-6 py-6 mb-5">
           <div className="flex py-4 justify-between items-baseline w-full">
             <p>Hourly Forecast</p>
-            <button className="flex gap-2 bg-neutral-600 rounded-lg p-2.5">
-              <p>Tuesday</p>
-              <Image
-                src="/icon-dropdown.svg"
-                alt="dropdown"
-                width={16}
-                height={16}
-              />
-            </button>
+            <div
+              ref={dropdownRef}
+              className="relative"
+              onMouseEnter={() => {
+                if (!locked) setUnitsDropdown(true);
+              }}
+              onMouseLeave={() => {
+                if (!locked) setUnitsDropdown(false);
+              }}
+
+            >
+              <button onClick={handleClick} className="flex gap-2 bg-neutral-600 rounded-lg p-2.5 cursor-pointer relative hover:bg-neutral-700">
+                <p>Tuesday</p>
+                <Image
+                  src="/icon-dropdown.svg"
+                  alt="dropdown"
+                  width={16}
+                  height={16}
+                />
+                { unitsDropdown && <DayDropdown />}
+              </button>
+            </div>
           </div>
           <div className="flex h-[83%] flex-col lg:justify-between gap-3 ">
-            <HourlyForecast/>
-            <HourlyForecast/>
-            <HourlyForecast/>
-            <HourlyForecast/>
-            <HourlyForecast/>
-            <HourlyForecast/>
-            <HourlyForecast/>
-            <HourlyForecast/>
+            <HourlyForecast />
+            <HourlyForecast />
+            <HourlyForecast />
+            <HourlyForecast />
+            <HourlyForecast />
+            <HourlyForecast />
+            <HourlyForecast />
+            <HourlyForecast />
           </div>
-
         </div>
       </div>
     </>
