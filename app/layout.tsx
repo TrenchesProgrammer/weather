@@ -23,9 +23,7 @@ export default function RootLayout({
       <body
         className={`${dmSans.className} antialiased `}
       >
-        <AppProvider>
           {children}        
-        </AppProvider>
 
       </body>
     </html>
