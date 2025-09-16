@@ -54,7 +54,7 @@ export default function Home() {
         const latitude = position.coords.latitude;
         const longitude = position.coords.longitude;
         const cityRes = await fetch(
-          `https://api.openweathermap.org/geo/1.0/reverse?lat=${latitude}&lon=${longitude}&limit=1&appid=${process.env.NEXT_PUBLIC_API_KEY}`
+          `https://api.openweathermap.org/geo/1.0/reverse?lat=${latitude}&lon=${longitude}&limit=1&appid=${process.env.API_KEY}`
         );
         const cityData = await cityRes.json();
         setState(cityData[0]?.state ?? "Unknown location");
