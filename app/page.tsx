@@ -3,6 +3,7 @@ import DailyForecast from "@/Components/DailyForecast";
 import DayDropdown from "@/Components/DayDropdown";
 import HourlyForecast from "@/Components/HourlyForecast";
 import Instruments from "@/Components/Instruments";
+import Navbar from "@/Components/Navbar";
 import { Bricolage_Grotesque } from "next/font/google";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
@@ -14,12 +15,23 @@ const bricolageGrotesque = Bricolage_Grotesque({
 export default function Home() {
   const [unitsDropdown, setUnitsDropdown] = useState(false); // visible or not
   const [locked, setLocked] = useState(false); // locked by click
+  const [state, setState] = useState("Unknown location");
+  const [country, setCountry] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const date = new Date();
+  const [imperial, setImperial] = useState(false);
+  const formattedDate = date.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric'
+});
+  const [currentTemp, setCurrentTemp] = useState("--");
+  const [apparentTemp,setApparentTemp] = useState("--");
+  const [humidity,setHumidity] = useState("--");
+  const [wind,setWind] = useState("--");
+  const [precipitation,setPrecipitation] = useState("--");
+  const [weatherCode,setWeatherCode] = useState(0);
   useEffect(() => {
-    navigator.geolocation.getCurrentPosition(function (position) {
-      const latitude = position.coords.latitude;
-      const longitude = position.coords.longitude;
-    });
     function handleClickOutside(event: MouseEvent) {
       if (
         dropdownRef.current &&
@@ -30,8 +42,44 @@ export default function Home() {
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
+
+    async function getWeather() {
+      console.log("getWeather called");
+      const getPosition = () =>
+        new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject);
+        });
+      try {
+        const position = await getPosition();
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+        const cityRes = await fetch(
+          `https://api.openweathermap.org/geo/1.0/reverse?lat=${latitude}&lon=${longitude}&limit=1&appid=${process.env.NEXT_PUBLIC_API_KEY}`
+        );
+        const cityData = await cityRes.json();
+        setState(cityData[0]?.state ?? "Unknown location");
+        setCountry(cityData[0]?.country ?? "");
+
+        console.log(cityData);
+
+        // 2. Get weather using Open-Meteo
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,precipitation,weathercode,wind_speed_10m,apparent_temperature&hourly=temperature_2m&daily=weathercode,temperature_2m_max,temperature_2m_min${imperial?"&wind_speed_unit=mph&precipitation_unit=inch":""}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        setCurrentTemp(Math.round(Number(data.current.temperature_2m)).toString())
+        setApparentTemp(Math.round(Number(data.current.apparent_temperature)).toString())
+        setHumidity(Math.round(Number(data.current.relative_humidity_2m)).toString())
+        setWind(data.current.wind_speed_10m)
+        setPrecipitation(data.current.precipitation)
+        setWeatherCode(data.current.weathercode)
+        console.log(data);
+      } catch (error) {
+        console.error("Error getting weather:", error);
+      }
+    }
+    getWeather();
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [imperial]);
   const handleClick = () => {
     if (locked) {
       setLocked(false);
@@ -44,6 +92,7 @@ export default function Home() {
 
   return (
     <>
+      <Navbar imperial={imperial} setImperial={setImperial}/>
       <div className="px-10 mt-10">
         <h1
           className={`text-5xl font-bold ${bricolageGrotesque.className} text-center `}
@@ -68,24 +117,24 @@ export default function Home() {
         <div className="lg:w-[60%] flex flex-col justify-between gap-5 w-full ">
           <div className="md:bg-today-large bg-today-small bg-no-repeat bg-cover  h-[300px] lg:h-[250px] w-full flex-col sm:flex-row items-center rounded-3xl flex  justify-between p-10">
             <div className="flex  flex-col text-center sm:text-left">
-              <p className="text-3xl font-semibold">Berlin, Germany</p>
-              <p className="text-lg text-neutral-300">Monday, 20th Aug</p>
+              <p className="text-3xl font-semibold">{`${state}, ${country}`}</p>
+              <p className="text-lg text-neutral-300">{formattedDate}</p>
             </div>
             <div className="flex items-center justify-around w-full sm:w-auto">
               <Image
-                src="/icon-sunny.webp"
-                alt="sunny"
+                src={`/icon-${weatherCode}.webp`}
+                alt="weather"
                 width={100}
                 height={100}
               />
-              <p className="text-8xl font-bold">19&#176;</p>
+              <p className="text-8xl font-bold">{`${currentTemp }`}&#176;</p>
             </div>
           </div>
           <div className="flex justify-between gap-5 flex-wrap ">
-            <Instruments />
-            <Instruments />
-            <Instruments />
-            <Instruments />
+            <Instruments label="Feels Like" unit="&#176;" value={apparentTemp}/>
+            <Instruments label="Humidity" unit="%" value={humidity}/>
+            <Instruments label="Wind" unit="km/h" value={wind} />
+            <Instruments label="Precipitation" unit="mm" value={precipitation} />
           </div>
           <div>
             <p>Daily forecast</p>
@@ -112,9 +161,11 @@ export default function Home() {
               onMouseLeave={() => {
                 if (!locked) setUnitsDropdown(false);
               }}
-
             >
-              <button onClick={handleClick} className="flex gap-2 bg-neutral-600 rounded-lg p-2.5 cursor-pointer relative hover:bg-neutral-700">
+              <button
+                onClick={handleClick}
+                className="flex gap-2 bg-neutral-600 rounded-lg p-2.5 cursor-pointer relative hover:bg-neutral-700"
+              >
                 <p>Tuesday</p>
                 <Image
                   src="/icon-dropdown.svg"
@@ -122,7 +173,7 @@ export default function Home() {
                   width={16}
                   height={16}
                 />
-                { unitsDropdown && <DayDropdown />}
+                {unitsDropdown && <DayDropdown />}
               </button>
             </div>
           </div>

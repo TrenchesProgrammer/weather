@@ -2,8 +2,11 @@
 import Image from "next/image";
 import React, { useState, useRef, useEffect } from "react";
 import UnitDropdown from "./UnitDropdown";
-
-const Navbar = () => {
+type NavbarProps ={
+  imperial: boolean;
+  setImperial: (val: boolean) => void;
+}
+const Navbar = ({imperial, setImperial}:NavbarProps) => {
   const [unitsDropdown, setUnitsDropdown] = useState(false); // visible or not
   const [locked, setLocked] = useState(false);               // locked by click
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -64,7 +67,7 @@ const Navbar = () => {
           </button>
 
           {unitsDropdown && (
-              <UnitDropdown />
+              <UnitDropdown imperial ={imperial} setImperial={setImperial} />
             
           )}
         </div>

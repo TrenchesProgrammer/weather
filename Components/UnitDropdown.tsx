@@ -1,9 +1,15 @@
 import React from "react";
-
-const UnitDropdown = () => {
+type UnitDropdownProps ={
+  imperial: boolean;
+  setImperial: (val: boolean) => void;
+}
+const UnitDropdown = ({imperial, setImperial}:UnitDropdownProps) => {
+  const handleImperial = () => {
+    setImperial(!imperial);
+  }
   return (
     <div className="absolute rounded-lg p-3 flex-col gap-1 z-1 text-md  -bottom-77 flex text-left right-0 w-50 border border-neutral-600 bg-neutral-700">
-      <p>Switch to imperial</p>
+      <p onClick={handleImperial}>{`Switch to ${imperial?'metric':'imperial'}`}</p>
       <p className="text-neutral-400 text-sm">Temperature</p>
       <p>Celcius(&#176;C)</p>
       <p>Farenheit(&#176;F)</p>
