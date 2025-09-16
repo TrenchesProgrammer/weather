@@ -31,6 +31,8 @@ export default function Home() {
   const [wind,setWind] = useState("--");
   const [precipitation,setPrecipitation] = useState("--");
   const [weatherCode,setWeatherCode] = useState(0);
+  const [windUnit,setWindUnit] = useState("km/h");
+  const [precipitationUnit,setPrecipitationUnit] = useState("mm");
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -72,6 +74,8 @@ export default function Home() {
         setWind(data.current.wind_speed_10m)
         setPrecipitation(data.current.precipitation)
         setWeatherCode(data.current.weathercode)
+        setWindUnit(imperial?"mph":"km/h")
+        setPrecipitationUnit(imperial?"in":"mm")
         console.log(data);
       } catch (error) {
         console.error("Error getting weather:", error);
@@ -133,8 +137,8 @@ export default function Home() {
           <div className="flex justify-between gap-5 flex-wrap ">
             <Instruments label="Feels Like" unit="&#176;" value={apparentTemp}/>
             <Instruments label="Humidity" unit="%" value={humidity}/>
-            <Instruments label="Wind" unit="km/h" value={wind} />
-            <Instruments label="Precipitation" unit="mm" value={precipitation} />
+            <Instruments label="Wind" unit={windUnit} value={wind} />
+            <Instruments label="Precipitation" unit={precipitationUnit} value={precipitation} />
           </div>
           <div>
             <p>Daily forecast</p>

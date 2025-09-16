@@ -24,7 +24,6 @@ export default function RootLayout({
         className={`${dmSans.className} antialiased `}
       >
           {children}        
-
       </body>
     </html>
   );
