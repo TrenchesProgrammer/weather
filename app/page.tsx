@@ -20,11 +20,14 @@ export default function Home() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const date = new Date();
   const [imperial, setImperial] = useState(false);
+  const [days, setDays] = useState([]);
   const formattedDate = date.toLocaleDateString('en-US', {
     weekday: 'long',
     month: 'long',
     day: 'numeric'
 });
+  const [temperatureMin, setTemperatureMin] = useState([]);
+  const [temperatureMax, setTemperatureMax] = useState([]);
   const [currentTemp, setCurrentTemp] = useState("--");
   const [apparentTemp,setApparentTemp] = useState("--");
   const [humidity,setHumidity] = useState("--");
@@ -33,6 +36,7 @@ export default function Home() {
   const [weatherCode,setWeatherCode] = useState(0);
   const [windUnit,setWindUnit] = useState("km/h");
   const [precipitationUnit,setPrecipitationUnit] = useState("mm");
+  const [dailyWeatherCode, setDailyWeatherCode] = useState([]);
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -44,15 +48,14 @@ export default function Home() {
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
-
     async function getWeather() {
-      console.log("getWeather called");
       const getPosition = () =>
         new Promise<GeolocationPosition>((resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject);
         });
       try {
         const position = await getPosition();
+        console.log(position)
         const latitude = position.coords.latitude;
         const longitude = position.coords.longitude;
         const cityRes = await fetch(
@@ -76,6 +79,10 @@ export default function Home() {
         setWeatherCode(data.current.weathercode)
         setWindUnit(imperial?"mph":"km/h")
         setPrecipitationUnit(imperial?"in":"mm")
+        setDays(data.daily.time);
+        setTemperatureMin(data.daily.temperature_2m_min);
+        setTemperatureMax(data.daily.temperature_2m_max);
+        setDailyWeatherCode(data.daily.weathercode);
         console.log(data);
       } catch (error) {
         console.error("Error getting weather:", error);
@@ -93,7 +100,10 @@ export default function Home() {
       setUnitsDropdown(true);
     }
   };
-
+  const daysOfWeek = Object.values(days).map(dateStr => {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString("en-US", { weekday: "short" }); 
+});
   return (
     <>
       <Navbar imperial={imperial} setImperial={setImperial}/>
@@ -143,13 +153,7 @@ export default function Home() {
           <div>
             <p>Daily forecast</p>
             <div className="flex gap-3 flex-wrap  w-full mt-5 pb-5">
-              <DailyForecast />
-              <DailyForecast />
-              <DailyForecast />
-              <DailyForecast />
-              <DailyForecast />
-              <DailyForecast />
-              <DailyForecast />
+              {daysOfWeek.map((day, index)=><DailyForecast day={day} key={index} min={Math.round(Number(temperatureMin[index])).toString()} max={Math.round(Number(temperatureMax[index])).toString()} dailyweatherCode={dailyWeatherCode[index]}/>)}
             </div>
           </div>
         </div>
