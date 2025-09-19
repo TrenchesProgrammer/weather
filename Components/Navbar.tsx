@@ -5,8 +5,12 @@ import UnitDropdown from "./UnitDropdown";
 type NavbarProps ={
   imperial: boolean;
   setImperial: (val: boolean) => void;
+  mph: boolean;
+  setMph: (val: boolean) => void;
+  inch: boolean;
+  setInch: (val: boolean) => void;
 }
-const Navbar = ({imperial, setImperial}:NavbarProps) => {
+const Navbar = ({imperial, setImperial, mph, setMph, inch, setInch}:NavbarProps) => {
   const [unitsDropdown, setUnitsDropdown] = useState(false); // visible or not
   const [locked, setLocked] = useState(false);               // locked by click
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -67,7 +71,7 @@ const Navbar = ({imperial, setImperial}:NavbarProps) => {
           </button>
 
           {unitsDropdown && (
-              <UnitDropdown imperial ={imperial} setImperial={setImperial} />
+              <UnitDropdown imperial ={imperial} setImperial={setImperial} mph={mph} setMph={setMph} inch={inch} setInch={setInch} />
             
           )}
         </div>

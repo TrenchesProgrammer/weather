@@ -20,7 +20,33 @@ export default function Home() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const date = new Date();
   const [imperial, setImperial] = useState(false);
-  const [days, setDays] = useState([]);
+  type WeatherData = {
+    current: {
+      temperature_2m: number;
+      apparent_temperature: number;
+      relative_humidity_2m: number;
+      wind_speed_10m: number;
+      precipitation: number;
+      weathercode: number;
+    };
+    daily: {
+      time: string[];
+      temperature_2m_min: number[];
+      temperature_2m_max: number[];
+      weathercode: number[];
+    };
+    hourly: {
+      time: string[];
+      temperature_2m: string[];
+      weathercode: string[];
+    };
+  };
+
+  const [data, setData] = useState<WeatherData | null>(null);
+  const [imperialData, setImperialData] = useState<WeatherData | null>(null);
+  const [days, setDays] = useState<string[]>([]);
+  const [mph, setMph] = useState(false);
+  const [inch, setInch] = useState(false);
   const formattedDate = date.toLocaleDateString("en-US", {
     weekday: "long",
     month: "short",
@@ -29,8 +55,8 @@ export default function Home() {
   const today = date.toLocaleDateString("en-US", { weekday: "long" });
   const time = date.getHours();
   const [selectedDay, setSelectedDay] = useState(today);
-  const [temperatureMin, setTemperatureMin] = useState([]);
-  const [temperatureMax, setTemperatureMax] = useState([]);
+  const [temperatureMin, setTemperatureMin] = useState<number[]>([]);
+  const [temperatureMax, setTemperatureMax] = useState<number[]>([]);
   const [currentTemp, setCurrentTemp] = useState("--");
   const [apparentTemp, setApparentTemp] = useState("--");
   const [humidity, setHumidity] = useState("--");
@@ -39,9 +65,12 @@ export default function Home() {
   const [weatherCode, setWeatherCode] = useState(0);
   const [windUnit, setWindUnit] = useState("km/h");
   const [precipitationUnit, setPrecipitationUnit] = useState("mm");
-  const [dailyWeatherCode, setDailyWeatherCode] = useState([]);
+  const [dailyWeatherCode, setDailyWeatherCode] = useState<number[]>([]);
 
-
+  useEffect(() => {
+    setMph(imperial);
+    setInch(imperial);
+  }, [imperial]);
   const [hourly, setHourly] = useState<{
     time: string[];
     temperature_2m: string[];
@@ -74,42 +103,57 @@ export default function Home() {
         const cityData = await cityRes.json();
         setState(cityData[0]?.state ?? "Unknown location");
         setCountry(cityData[0]?.country ?? "");
-
-        console.log(cityData);
-
         // 2. Get weather using Open-Meteo
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,precipitation,weathercode,wind_speed_10m,apparent_temperature&hourly=temperature_2m,weathercode&daily=weathercode,temperature_2m_max,temperature_2m_min${
-          imperial ? "&wind_speed_unit=mph&precipitation_unit=inch" : ""
-        }`;
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,precipitation,weathercode,wind_speed_10m,apparent_temperature&hourly=temperature_2m,weathercode&daily=weathercode,temperature_2m_max,temperature_2m_min`;
+        const imperialUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,precipitation,weathercode,wind_speed_10m,apparent_temperature&hourly=temperature_2m,weathercode&daily=weathercode,temperature_2m_max,temperature_2m_min&wind_speed_unit=mph&precipitation_unit=inch`;
         const response = await fetch(url);
-        const data = await response.json();
-        setCurrentTemp(
-          Math.round(Number(data.current.temperature_2m)).toString()
-        );
-        setApparentTemp(
-          Math.round(Number(data.current.apparent_temperature)).toString()
-        );
-        setHumidity(
-          Math.round(Number(data.current.relative_humidity_2m)).toString()
-        );
-        setWind(data.current.wind_speed_10m);
-        setPrecipitation(data.current.precipitation);
-        setWeatherCode(data.current.weathercode);
-        setWindUnit(imperial ? "mph" : "km/h");
-        setPrecipitationUnit(imperial ? "in" : "mm");
-        setDays(data.daily.time);
-        setTemperatureMin(data.daily.temperature_2m_min);
-        setTemperatureMax(data.daily.temperature_2m_max);
-        setDailyWeatherCode(data.daily.weathercode);
-        setHourly(data.hourly);
-        console.log(data);
+        const response2 = await fetch(imperialUrl);
+        setData(await response.json());
+        setImperialData(await response2.json());
       } catch (error) {
         console.error("Error getting weather:", error);
       }
     }
     getWeather();
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [imperial]);
+  }, []);
+  useEffect(() => {
+    setCurrentTemp(
+      Math.round(Number(data?.current.temperature_2m)).toString()
+    );
+    setApparentTemp(
+      Math.round(Number(data?.current.apparent_temperature)).toString()
+    );
+    setHumidity(
+      Math.round(Number(data?.current.relative_humidity_2m)).toString()
+    );
+    setWind(
+      (
+        mph
+          ? imperialData?.current.wind_speed_10m
+          : data?.current.wind_speed_10m
+      ) !== undefined
+        ? Math.round(Number(mph ? imperialData?.current.wind_speed_10m : data?.current.wind_speed_10m)).toString()
+        : "--"
+    );
+    setPrecipitation(
+      inch
+        ? imperialData?.current?.precipitation !== undefined
+          ? imperialData.current.precipitation.toString()
+          : "--"
+        : data?.current?.precipitation !== undefined
+          ? data.current.precipitation.toString()
+          : "--"
+    );
+    setWeatherCode(data?.current.weathercode ?? 0);
+    setWindUnit(mph ? "mph" : "km/h");
+    setPrecipitationUnit(inch ? "in" : "mm");
+    setDays(data?.daily.time ?? []);
+    setTemperatureMin(data?.daily?.temperature_2m_min ?? []);
+    setTemperatureMax(data?.daily?.temperature_2m_max ?? []);
+    setDailyWeatherCode(data?.daily?.weathercode ?? []);
+    setHourly(data?.hourly ?? { temperature_2m: [], time: [], weathercode: [] });
+  }, [data, imperialData, mph, inch]);
   const handleClick = () => {
     if (locked) {
       setLocked(false);
@@ -171,11 +215,9 @@ export default function Home() {
     return convertTo24(obj.time) >= time;
   });
 
-  console.log(filtered);
-  console.log(dayGroups);
   return (
     <>
-      <Navbar imperial={imperial} setImperial={setImperial} />
+      <Navbar imperial={imperial} mph={mph} setMph={setMph} inch={inch} setInch={setInch} setImperial={setImperial} />
       <div className="px-10 mt-10">
         <h1
           className={`text-5xl font-bold ${bricolageGrotesque.className} text-center `}
@@ -210,7 +252,7 @@ export default function Home() {
                 width={100}
                 height={100}
               />
-              <p className="text-8xl font-bold">{`${currentTemp}`}&#176;</p>
+              <p className="text-8xl font-bold">{`${currentTemp ? currentTemp:'--'}`}&#176;</p>
             </div>
           </div>
           <div className="flex justify-between gap-5 flex-wrap ">
@@ -236,7 +278,7 @@ export default function Home() {
                   key={index}
                   min={Math.round(Number(temperatureMin[index])).toString()}
                   max={Math.round(Number(temperatureMax[index])).toString()}
-                  dailyweatherCode={dailyWeatherCode[index]}
+                  dailyweatherCode={dailyWeatherCode[index]?.toString()}
                 />
               ))}
             </div>
@@ -275,7 +317,7 @@ export default function Home() {
               </button>
             </div>
           </div>
-          <div className="flex h-[83%] flex-col lg:justify-between gap-3 ">
+          <div className="flex h-[83%] flex-col gap-3 ">
             {/* {selectedDay !== today && dayGroups[selectedDay]?.slice(0,8).map((item, index)=><HourlyForecast key={index} time={item.time} temp={Math.round(Number(item.temp)).toString()} weatherCode={item.weathercode} />)}    */}
             {selectedDay === today
               ? filtered?.map((item, index) => (
