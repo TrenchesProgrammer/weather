@@ -9,7 +9,6 @@ type Props = {
 }
 
 const DailyForecast = ({day, min, max, dailyweatherCode}:Props) => {
-  console.log(`/icon-${dailyweatherCode}.webp`);
   return (
     <div className='flex flex-col bg-neutral-800 p-4 h-[130px] rounded-2xl flex-[1_1_14]  justify-between items-center border border-neutral-600'>
         <p className='text-neutral-0 font-semibold'>
