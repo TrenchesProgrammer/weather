@@ -153,7 +153,7 @@ export default function Home() {
     if (!match) {
       throw new Error(`Invalid time format: ${timeStr}`);
     }
-    let [hour, modifier] = match.slice(1);
+    const [hour, modifier] = match.slice(1);
 
     let hourdigit = parseInt(hour, 10);
 
