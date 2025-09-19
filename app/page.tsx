@@ -21,26 +21,39 @@ export default function Home() {
   const date = new Date();
   const [imperial, setImperial] = useState(false);
   const [days, setDays] = useState([]);
-  const formattedDate = date.toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'short',
-    day: 'numeric'
-});
-  const today = date.toLocaleDateString('en-US', { weekday: 'long' });
-  const time = date.getHours();
+  const formattedDate = date.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+  });
+  const today = date.toLocaleDateString("en-US", { weekday: "long" });
+  let time = date.getHours();
   const [selectedDay, setSelectedDay] = useState(today);
   const [temperatureMin, setTemperatureMin] = useState([]);
   const [temperatureMax, setTemperatureMax] = useState([]);
   const [currentTemp, setCurrentTemp] = useState("--");
-  const [apparentTemp,setApparentTemp] = useState("--");
-  const [humidity,setHumidity] = useState("--");
-  const [wind,setWind] = useState("--");
-  const [precipitation,setPrecipitation] = useState("--");
-  const [weatherCode,setWeatherCode] = useState(0);
-  const [windUnit,setWindUnit] = useState("km/h");
-  const [precipitationUnit,setPrecipitationUnit] = useState("mm");
+  const [apparentTemp, setApparentTemp] = useState("--");
+  const [humidity, setHumidity] = useState("--");
+  const [wind, setWind] = useState("--");
+  const [precipitation, setPrecipitation] = useState("--");
+  const [weatherCode, setWeatherCode] = useState(0);
+  const [windUnit, setWindUnit] = useState("km/h");
+  const [precipitationUnit, setPrecipitationUnit] = useState("mm");
   const [dailyWeatherCode, setDailyWeatherCode] = useState([]);
-  const [hourly, setHourly] = useState<{ time: string[]; temperature_2m: string[]; weathercode:string[];}>({  temperature_2m: [], time: [], weathercode:[] })
+
+  /*
+[
+  { "1pm": "something else" },
+  { "2pm": "another value" },
+  { "5pm": "later value" }
+]
+*/
+
+  const [hourly, setHourly] = useState<{
+    time: string[];
+    temperature_2m: string[];
+    weathercode: string[];
+  }>({ temperature_2m: [], time: [], weathercode: [] });
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -59,7 +72,7 @@ export default function Home() {
         });
       try {
         const position = await getPosition();
-        console.log(position)
+        console.log(position);
         const latitude = position.coords.latitude;
         const longitude = position.coords.longitude;
         const cityRes = await fetch(
@@ -72,22 +85,30 @@ export default function Home() {
         console.log(cityData);
 
         // 2. Get weather using Open-Meteo
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,precipitation,weathercode,wind_speed_10m,apparent_temperature&hourly=temperature_2m,weathercode&daily=weathercode,temperature_2m_max,temperature_2m_min${imperial?"&wind_speed_unit=mph&precipitation_unit=inch":""}`;
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,precipitation,weathercode,wind_speed_10m,apparent_temperature&hourly=temperature_2m,weathercode&daily=weathercode,temperature_2m_max,temperature_2m_min${
+          imperial ? "&wind_speed_unit=mph&precipitation_unit=inch" : ""
+        }`;
         const response = await fetch(url);
         const data = await response.json();
-        setCurrentTemp(Math.round(Number(data.current.temperature_2m)).toString())
-        setApparentTemp(Math.round(Number(data.current.apparent_temperature)).toString())
-        setHumidity(Math.round(Number(data.current.relative_humidity_2m)).toString())
-        setWind(data.current.wind_speed_10m)
-        setPrecipitation(data.current.precipitation)
-        setWeatherCode(data.current.weathercode)
-        setWindUnit(imperial?"mph":"km/h")
-        setPrecipitationUnit(imperial?"in":"mm")
+        setCurrentTemp(
+          Math.round(Number(data.current.temperature_2m)).toString()
+        );
+        setApparentTemp(
+          Math.round(Number(data.current.apparent_temperature)).toString()
+        );
+        setHumidity(
+          Math.round(Number(data.current.relative_humidity_2m)).toString()
+        );
+        setWind(data.current.wind_speed_10m);
+        setPrecipitation(data.current.precipitation);
+        setWeatherCode(data.current.weathercode);
+        setWindUnit(imperial ? "mph" : "km/h");
+        setPrecipitationUnit(imperial ? "in" : "mm");
         setDays(data.daily.time);
         setTemperatureMin(data.daily.temperature_2m_min);
         setTemperatureMax(data.daily.temperature_2m_max);
         setDailyWeatherCode(data.daily.weathercode);
-        setHourly(data.hourly)
+        setHourly(data.hourly);
         console.log(data);
       } catch (error) {
         console.error("Error getting weather:", error);
@@ -105,36 +126,63 @@ export default function Home() {
       setUnitsDropdown(true);
     }
   };
-  const daysOfWeek = Object.values(days).map(dateStr => {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString("en-US", { weekday: "short" }); 
-});
-const dayGroups: { [key: string]: { time: string; temp: string ; weathercode:string}[] } = {};
-hourly.time.forEach((timestamp: string, i: number) => {
-  const [date, h] = timestamp.split("T");
-    const [hourStr] = h.split(":");
-  let newHour = parseInt(hourStr, 10);
-  const suffix = newHour >= 12 ? "PM" : "AM";
-
-  newHour = newHour % 12 || 12;
-
-  const hour =  `${newHour} ${suffix}`;
-  const dayDate = new Date(date);
-   const day = dayDate.toLocaleDateString("en-US", { weekday: "long" });
-  if (!dayGroups[day]) {
-    dayGroups[day] = [];
-  }
-  dayGroups[day].push({
-    time: hour,
-    temp: hourly.temperature_2m[i],
-    weathercode: hourly.weathercode[i]
+  const daysOfWeek = Object.values(days).map((dateStr) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-US", { weekday: "short" });
   });
-});
+  const dayGroups: {
+    [key: string]: { time: string; temp: string; weathercode: string }[];
+  } = {};
+  hourly.time.forEach((timestamp: string, i: number) => {
+    const [date, h] = timestamp.split("T");
+    const [hourStr] = h.split(":");
+    let newHour = parseInt(hourStr, 10);
+    const suffix = newHour >= 12 ? "PM" : "AM";
 
+    newHour = newHour % 12 || 12;
+
+    const hour = `${newHour}${suffix}`;
+    const dayDate = new Date(date);
+    const day = dayDate.toLocaleDateString("en-US", { weekday: "long" });
+    if (!dayGroups[day]) {
+      dayGroups[day] = [];
+    }
+    dayGroups[day].push({
+      time: hour,
+      temp: hourly.temperature_2m[i],
+      weathercode: hourly.weathercode[i],
+    });
+  });
+
+  const convertTo24 = (timeStr: string) => {
+    timeStr = timeStr.replace(/\s+/g, "");
+    const match = timeStr.match(/(\d+)(am|pm)/i);
+    if (!match) {
+      throw new Error(`Invalid time format: ${timeStr}`);
+    }
+    let [hour, modifier] = match.slice(1);
+
+    let hourdigit = parseInt(hour, 10);
+
+    if (modifier.toLowerCase() === "pm" && hourdigit !== 12) {
+      hourdigit += 12;
+    }
+    if (modifier.toLowerCase() === "am" && hourdigit === 12) {
+      hourdigit = 0;
+    }
+
+    return hourdigit;
+  };
+
+  const filtered = dayGroups[selectedDay]?.filter((obj) => {
+    return convertTo24(obj.time) >= time;
+  });
+
+  console.log(filtered);
   console.log(dayGroups);
   return (
     <>
-      <Navbar imperial={imperial} setImperial={setImperial}/>
+      <Navbar imperial={imperial} setImperial={setImperial} />
       <div className="px-10 mt-10">
         <h1
           className={`text-5xl font-bold ${bricolageGrotesque.className} text-center `}
@@ -169,19 +217,35 @@ hourly.time.forEach((timestamp: string, i: number) => {
                 width={100}
                 height={100}
               />
-              <p className="text-8xl font-bold">{`${currentTemp }`}&#176;</p>
+              <p className="text-8xl font-bold">{`${currentTemp}`}&#176;</p>
             </div>
           </div>
           <div className="flex justify-between gap-5 flex-wrap ">
-            <Instruments label="Feels Like" unit="&#176;" value={apparentTemp}/>
-            <Instruments label="Humidity" unit="%" value={humidity}/>
+            <Instruments
+              label="Feels Like"
+              unit="&#176;"
+              value={apparentTemp}
+            />
+            <Instruments label="Humidity" unit="%" value={humidity} />
             <Instruments label="Wind" unit={windUnit} value={wind} />
-            <Instruments label="Precipitation" unit={precipitationUnit} value={precipitation} />
+            <Instruments
+              label="Precipitation"
+              unit={precipitationUnit}
+              value={precipitation}
+            />
           </div>
           <div>
             <p>Daily forecast</p>
             <div className="flex gap-3 flex-wrap  w-full mt-5 pb-5">
-              {daysOfWeek.map((day, index)=><DailyForecast day={day} key={index} min={Math.round(Number(temperatureMin[index])).toString()} max={Math.round(Number(temperatureMax[index])).toString()} dailyweatherCode={dailyWeatherCode[index]}/>)}
+              {daysOfWeek.map((day, index) => (
+                <DailyForecast
+                  day={day}
+                  key={index}
+                  min={Math.round(Number(temperatureMin[index])).toString()}
+                  max={Math.round(Number(temperatureMax[index])).toString()}
+                  dailyweatherCode={dailyWeatherCode[index]}
+                />
+              ))}
             </div>
           </div>
         </div>
@@ -209,12 +273,36 @@ hourly.time.forEach((timestamp: string, i: number) => {
                   width={16}
                   height={16}
                 />
-                {unitsDropdown && <DayDropdown selectedDay={selectedDay} setSelectedDay={setSelectedDay} />}
+                {unitsDropdown && (
+                  <DayDropdown
+                    selectedDay={selectedDay}
+                    setSelectedDay={setSelectedDay}
+                  />
+                )}
               </button>
             </div>
           </div>
           <div className="flex h-[83%] flex-col lg:justify-between gap-3 ">
-            {dayGroups[selectedDay]?.slice(0,8).map((item, index)=><HourlyForecast key={index} time={item.time} temp={Math.round(Number(item.temp)).toString()} weatherCode={item.weathercode} />)}
+            {/* {selectedDay !== today && dayGroups[selectedDay]?.slice(0,8).map((item, index)=><HourlyForecast key={index} time={item.time} temp={Math.round(Number(item.temp)).toString()} weatherCode={item.weathercode} />)}    */}
+            {selectedDay === today
+              ? filtered?.map((item, index) => (
+                  <HourlyForecast
+                    key={index}
+                    time={item.time}
+                    temp={Math.round(Number(item.temp)).toString()}
+                    weatherCode={item.weathercode}
+                  />
+                ))
+              : dayGroups[selectedDay]
+                  ?.slice(0, 8)
+                  .map((item, index) => (
+                    <HourlyForecast
+                      key={index}
+                      time={item.time}
+                      temp={Math.round(Number(item.temp)).toString()}
+                      weatherCode={item.weathercode}
+                    />
+                  ))}
           </div>
         </div>
       </div>
