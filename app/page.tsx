@@ -27,7 +27,7 @@ export default function Home() {
     day: "numeric",
   });
   const today = date.toLocaleDateString("en-US", { weekday: "long" });
-  let time = date.getHours();
+  const time = date.getHours();
   const [selectedDay, setSelectedDay] = useState(today);
   const [temperatureMin, setTemperatureMin] = useState([]);
   const [temperatureMax, setTemperatureMax] = useState([]);
@@ -41,13 +41,6 @@ export default function Home() {
   const [precipitationUnit, setPrecipitationUnit] = useState("mm");
   const [dailyWeatherCode, setDailyWeatherCode] = useState([]);
 
-  /*
-[
-  { "1pm": "something else" },
-  { "2pm": "another value" },
-  { "5pm": "later value" }
-]
-*/
 
   const [hourly, setHourly] = useState<{
     time: string[];
