@@ -9,8 +9,10 @@ type NavbarProps ={
   setMph: (val: boolean) => void;
   inch: boolean;
   setInch: (val: boolean) => void;
+  farenheit: boolean;
+  setFarenheit: (val: boolean) => void;
 }
-const Navbar = ({imperial, setImperial, mph, setMph, inch, setInch}:NavbarProps) => {
+const Navbar = ({imperial, setImperial, mph, setMph, inch, setInch, farenheit, setFarenheit}:NavbarProps) => {
   const [unitsDropdown, setUnitsDropdown] = useState(false); // visible or not
   const [locked, setLocked] = useState(false);               // locked by click
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -71,8 +73,7 @@ const Navbar = ({imperial, setImperial, mph, setMph, inch, setInch}:NavbarProps)
           </button>
 
           {unitsDropdown && (
-              <UnitDropdown imperial ={imperial} setImperial={setImperial} mph={mph} setMph={setMph} inch={inch} setInch={setInch} />
-            
+            <UnitDropdown imperial={imperial} farenheit={farenheit} setFarenheit={setFarenheit} setImperial={setImperial} mph={mph} setMph={setMph} inch={inch} setInch={setInch} />
           )}
         </div>
       </div>

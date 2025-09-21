@@ -7,7 +7,6 @@ import Navbar from "@/Components/Navbar";
 import { Bricolage_Grotesque } from "next/font/google";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-
 const bricolageGrotesque = Bricolage_Grotesque({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
@@ -41,7 +40,7 @@ export default function Home() {
       weathercode: string[];
     };
   };
-
+  const [farenheit, setFarenheit] = useState(false);
   const [data, setData] = useState<WeatherData | null>(null);
   const [imperialData, setImperialData] = useState<WeatherData | null>(null);
   const [days, setDays] = useState<string[]>([]);
@@ -104,8 +103,8 @@ export default function Home() {
         setState(cityData[0]?.state ?? "Unknown location");
         setCountry(cityData[0]?.country ?? "");
         // 2. Get weather using Open-Meteo
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,precipitation,weathercode,wind_speed_10m,apparent_temperature&hourly=temperature_2m,weathercode&daily=weathercode,temperature_2m_max,temperature_2m_min`;
-        const imperialUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,precipitation,weathercode,wind_speed_10m,apparent_temperature&hourly=temperature_2m,weathercode&daily=weathercode,temperature_2m_max,temperature_2m_min&wind_speed_unit=mph&precipitation_unit=inch`;
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,precipitation,weathercode,wind_speed_10m,apparent_temperature${farenheit ?"&temperature_unit=fahrenheit":""}&hourly=temperature_2m,weathercode&daily=weathercode,temperature_2m_max,temperature_2m_min`;
+        const imperialUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,precipitation,weathercode,wind_speed_10m,apparent_temperature${farenheit ?"&temperature_unit=fahrenheit":""}&hourly=temperature_2m,weathercode&daily=weathercode,temperature_2m_max,temperature_2m_min&wind_speed_unit=mph&precipitation_unit=inch`;
         const response = await fetch(url);
         const response2 = await fetch(imperialUrl);
         setData(await response.json());
@@ -116,24 +115,26 @@ export default function Home() {
     }
     getWeather();
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [farenheit]);
   useEffect(() => {
+    if (!data || !data.current) return; // <-- Add this guard
+
     setCurrentTemp(
-      Math.round(Number(data?.current.temperature_2m)).toString()
+      Math.round(Number(data.current.temperature_2m)).toString()
     );
     setApparentTemp(
-      Math.round(Number(data?.current.apparent_temperature)).toString()
+      Math.round(Number(data.current.apparent_temperature)).toString()
     );
     setHumidity(
-      Math.round(Number(data?.current.relative_humidity_2m)).toString()
+      Math.round(Number(data.current.relative_humidity_2m)).toString()
     );
     setWind(
       (
         mph
-          ? imperialData?.current.wind_speed_10m
-          : data?.current.wind_speed_10m
+          ? imperialData?.current?.wind_speed_10m
+          : data.current.wind_speed_10m
       ) !== undefined
-        ? Math.round(Number(mph ? imperialData?.current.wind_speed_10m : data?.current.wind_speed_10m)).toString()
+        ? Math.round(Number(mph ? imperialData?.current?.wind_speed_10m : data.current.wind_speed_10m)).toString()
         : "--"
     );
     setPrecipitation(
@@ -141,18 +142,18 @@ export default function Home() {
         ? imperialData?.current?.precipitation !== undefined
           ? imperialData.current.precipitation.toString()
           : "--"
-        : data?.current?.precipitation !== undefined
+        : data.current.precipitation !== undefined
           ? data.current.precipitation.toString()
           : "--"
     );
-    setWeatherCode(data?.current.weathercode ?? 0);
+    setWeatherCode(data.current.weathercode ?? 0);
     setWindUnit(mph ? "mph" : "km/h");
     setPrecipitationUnit(inch ? "in" : "mm");
-    setDays(data?.daily.time ?? []);
-    setTemperatureMin(data?.daily?.temperature_2m_min ?? []);
-    setTemperatureMax(data?.daily?.temperature_2m_max ?? []);
-    setDailyWeatherCode(data?.daily?.weathercode ?? []);
-    setHourly(data?.hourly ?? { temperature_2m: [], time: [], weathercode: [] });
+    setDays(data.daily.time ?? []);
+    setTemperatureMin(data.daily.temperature_2m_min ?? []);
+    setTemperatureMax(data.daily.temperature_2m_max ?? []);
+    setDailyWeatherCode(data.daily.weathercode ?? []);
+    setHourly(data.hourly ?? { temperature_2m: [], time: [], weathercode: [] });
   }, [data, imperialData, mph, inch]);
   const handleClick = () => {
     if (locked) {
@@ -217,7 +218,7 @@ export default function Home() {
 
   return (
     <>
-      <Navbar imperial={imperial} mph={mph} setMph={setMph} inch={inch} setInch={setInch} setImperial={setImperial} />
+      <Navbar imperial={imperial} farenheit={farenheit} setFarenheit={setFarenheit} mph={mph} setMph={setMph} inch={inch} setInch={setInch} setImperial={setImperial} />
       <div className="px-10 mt-10">
         <h1
           className={`text-5xl font-bold ${bricolageGrotesque.className} text-center `}
@@ -252,7 +253,7 @@ export default function Home() {
                 width={100}
                 height={100}
               />
-              <p className="text-8xl font-bold">{`${currentTemp ? currentTemp:'--'}`}&#176;</p>
+              <p className="text-8xl font-bold">{`${currentTemp ? currentTemp:0}`}&#176;</p>
             </div>
           </div>
           <div className="flex justify-between gap-5 flex-wrap ">
