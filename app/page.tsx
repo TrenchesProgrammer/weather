@@ -47,6 +47,13 @@ export default function Home() {
       weathercode: string[];
     };
   };
+  type City = {
+    name: string;
+    country: string;
+    state?: string;
+    lat: number;
+    lon: number;
+  };
   const [farenheit, setFarenheit] = useState(false);
   const [data, setData] = useState<WeatherData | null>(null);
   const [imperialData, setImperialData] = useState<WeatherData | null>(null);
@@ -83,7 +90,7 @@ export default function Home() {
     weathercode: string[];
   }>({ temperature_2m: [], time: [], weathercode: [] });
 
-  const [searchData, setSearchData] = useState<any[]>([]);
+  const [searchData, setSearchData] = useState<city[]>([]);
 
   useEffect(() => {
     if (input.length > 2) {
@@ -109,7 +116,6 @@ export default function Home() {
       }
     }
 
-
     document.addEventListener("mousedown", handleClickOutside);
     async function getWeather() {
       const getPosition = () =>
@@ -118,20 +124,32 @@ export default function Home() {
         });
       try {
         const position = await getPosition();
-        
+
         const latitude = position.coords.latitude;
         const longitude = position.coords.longitude;
         const cityRes = await fetch(
-          `https://api.openweathermap.org/geo/1.0/reverse?lat=${searchlat ? searchlat : latitude}&lon=${searchlon ? searchlon : longitude}&limit=1&appid=${process.env.NEXT_PUBLIC_API_KEY}`
+          `https://api.openweathermap.org/geo/1.0/reverse?lat=${
+            searchlat ? searchlat : latitude
+          }&lon=${searchlon ? searchlon : longitude}&limit=1&appid=${
+            process.env.NEXT_PUBLIC_API_KEY
+          }`
         );
         const cityData = await cityRes.json();
         setState(cityData[0]?.state ?? "Unknown location");
         setCountry(cityData[0]?.country ?? "");
         // 2. Get weather using Open-Meteo
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${searchlat ? searchlat : latitude}&longitude=${searchlon ? searchlon : longitude}&current=temperature_2m,relative_humidity_2m,precipitation,weathercode,wind_speed_10m,apparent_temperature${
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${
+          searchlat ? searchlat : latitude
+        }&longitude=${
+          searchlon ? searchlon : longitude
+        }&current=temperature_2m,relative_humidity_2m,precipitation,weathercode,wind_speed_10m,apparent_temperature${
           farenheit ? "&temperature_unit=fahrenheit" : ""
         }&hourly=temperature_2m,weathercode&daily=weathercode,temperature_2m_max,temperature_2m_min`;
-        const imperialUrl = `https://api.open-meteo.com/v1/forecast?latitude=${searchlat ? searchlat : latitude}&longitude=${searchlon ? searchlon : longitude}&current=temperature_2m,relative_humidity_2m,precipitation,weathercode,wind_speed_10m,apparent_temperature${
+        const imperialUrl = `https://api.open-meteo.com/v1/forecast?latitude=${
+          searchlat ? searchlat : latitude
+        }&longitude=${
+          searchlon ? searchlon : longitude
+        }&current=temperature_2m,relative_humidity_2m,precipitation,weathercode,wind_speed_10m,apparent_temperature${
           farenheit ? "&otemperature_unit=fahrenheit" : ""
         }&hourly=temperature_2m,weathercode&daily=weathercode,temperature_2m_max,temperature_2m_min&wind_speed_unit=mph&precipitation_unit=inch`;
         const response = await fetch(url);
@@ -144,7 +162,7 @@ export default function Home() {
     }
     getWeather();
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [farenheit,searchlat, searchlon]);
+  }, [farenheit, searchlat, searchlon]);
   useEffect(() => {
     if (!data || !data.current) return; // <-- Add this guard
 
@@ -185,7 +203,7 @@ export default function Home() {
     setTemperatureMax(data.daily.temperature_2m_max ?? []);
     setDailyWeatherCode(data.daily.weathercode ?? []);
     setHourly(data.hourly ?? { temperature_2m: [], time: [], weathercode: [] });
-  }, [data, imperialData, mph, inch, ]);
+  }, [data, imperialData, mph, inch]);
   const handleClick = () => {
     if (locked) {
       setLocked(false);
@@ -275,8 +293,14 @@ export default function Home() {
             placeholder="Search for a place"
             onChange={(e) => handleInput(e.target.value)}
           />
-          {input.length > 2 && <SearchDropdown searchData = {searchData} setsearchLat={setSearchLat} setInput={setInput} setsearchLon={setSearchLon}/>} 
-          
+          {input.length > 2 && (
+            <SearchDropdown
+              searchData={searchData}
+              setsearchLat={setSearchLat}
+              setInput={setInput}
+              setsearchLon={setSearchLon}
+            />
+          )}
         </div>
 
         <input
