@@ -95,7 +95,7 @@ export default function Home() {
   useEffect(() => {
     if (input.length > 2) {
       fetch(
-        `http://api.openweathermap.org/geo/1.0/direct?q=${input}&limit=20&appid=${process.env.NEXT_PUBLIC_API_KEY}`
+        `https://api.openweathermap.org/geo/1.0/direct?q=${input}&limit=20&appid=${process.env.NEXT_PUBLIC_API_KEY}`
       )
         .then((res) => res.json())
         .then((data) => {
