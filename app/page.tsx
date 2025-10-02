@@ -4,6 +4,7 @@ import DayDropdown from "@/Components/DayDropdown";
 import HourlyForecast from "@/Components/HourlyForecast";
 import Instruments from "@/Components/Instruments";
 import Navbar from "@/Components/Navbar";
+import SearchDropdown from "@/Components/SearchDropdown";
 import { Bricolage_Grotesque } from "next/font/google";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
@@ -12,10 +13,16 @@ const bricolageGrotesque = Bricolage_Grotesque({
   weight: ["400", "500", "600", "700", "800"],
 });
 export default function Home() {
+  const [searchlat, setSearchLat] = useState(0);
+  const [searchlon, setSearchLon] = useState(0);
   const [unitsDropdown, setUnitsDropdown] = useState(false); // visible or not
   const [locked, setLocked] = useState(false); // locked by click
   const [state, setState] = useState("Unknown location");
   const [country, setCountry] = useState("");
+  const [input, setInput] = useState("");
+  const handleInput = (value: string) => {
+    setInput(value);
+  };
   const dropdownRef = useRef<HTMLDivElement>(null);
   const date = new Date();
   const [imperial, setImperial] = useState(false);
@@ -75,6 +82,22 @@ export default function Home() {
     temperature_2m: string[];
     weathercode: string[];
   }>({ temperature_2m: [], time: [], weathercode: [] });
+
+  const [searchData, setSearchData] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (input.length > 2) {
+      fetch(
+        `http://api.openweathermap.org/geo/1.0/direct?q=${input}&limit=20&appid=${process.env.NEXT_PUBLIC_API_KEY}`
+      )
+        .then((res) => res.json())
+        .then((data) => {
+          setSearchData(data);
+        });
+    } else {
+      setSearchData([]);
+    }
+  }, [input]);
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -85,6 +108,8 @@ export default function Home() {
         setLocked(false);
       }
     }
+
+
     document.addEventListener("mousedown", handleClickOutside);
     async function getWeather() {
       const getPosition = () =>
@@ -93,18 +118,22 @@ export default function Home() {
         });
       try {
         const position = await getPosition();
-        console.log(position);
+        
         const latitude = position.coords.latitude;
         const longitude = position.coords.longitude;
         const cityRes = await fetch(
-          `https://api.openweathermap.org/geo/1.0/reverse?lat=${latitude}&lon=${longitude}&limit=1&appid=${process.env.NEXT_PUBLIC_API_KEY}`
+          `https://api.openweathermap.org/geo/1.0/reverse?lat=${searchlat ? searchlat : latitude}&lon=${searchlon ? searchlon : longitude}&limit=1&appid=${process.env.NEXT_PUBLIC_API_KEY}`
         );
         const cityData = await cityRes.json();
         setState(cityData[0]?.state ?? "Unknown location");
         setCountry(cityData[0]?.country ?? "");
         // 2. Get weather using Open-Meteo
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,precipitation,weathercode,wind_speed_10m,apparent_temperature${farenheit ?"&temperature_unit=fahrenheit":""}&hourly=temperature_2m,weathercode&daily=weathercode,temperature_2m_max,temperature_2m_min`;
-        const imperialUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,precipitation,weathercode,wind_speed_10m,apparent_temperature${farenheit ?"&temperature_unit=fahrenheit":""}&hourly=temperature_2m,weathercode&daily=weathercode,temperature_2m_max,temperature_2m_min&wind_speed_unit=mph&precipitation_unit=inch`;
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${searchlat ? searchlat : latitude}&longitude=${searchlon ? searchlon : longitude}&current=temperature_2m,relative_humidity_2m,precipitation,weathercode,wind_speed_10m,apparent_temperature${
+          farenheit ? "&temperature_unit=fahrenheit" : ""
+        }&hourly=temperature_2m,weathercode&daily=weathercode,temperature_2m_max,temperature_2m_min`;
+        const imperialUrl = `https://api.open-meteo.com/v1/forecast?latitude=${searchlat ? searchlat : latitude}&longitude=${searchlon ? searchlon : longitude}&current=temperature_2m,relative_humidity_2m,precipitation,weathercode,wind_speed_10m,apparent_temperature${
+          farenheit ? "&otemperature_unit=fahrenheit" : ""
+        }&hourly=temperature_2m,weathercode&daily=weathercode,temperature_2m_max,temperature_2m_min&wind_speed_unit=mph&precipitation_unit=inch`;
         const response = await fetch(url);
         const response2 = await fetch(imperialUrl);
         setData(await response.json());
@@ -115,13 +144,11 @@ export default function Home() {
     }
     getWeather();
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [farenheit]);
+  }, [farenheit,searchlat, searchlon]);
   useEffect(() => {
     if (!data || !data.current) return; // <-- Add this guard
 
-    setCurrentTemp(
-      Math.round(Number(data.current.temperature_2m)).toString()
-    );
+    setCurrentTemp(Math.round(Number(data.current.temperature_2m)).toString());
     setApparentTemp(
       Math.round(Number(data.current.apparent_temperature)).toString()
     );
@@ -129,12 +156,16 @@ export default function Home() {
       Math.round(Number(data.current.relative_humidity_2m)).toString()
     );
     setWind(
-      (
-        mph
-          ? imperialData?.current?.wind_speed_10m
-          : data.current.wind_speed_10m
-      ) !== undefined
-        ? Math.round(Number(mph ? imperialData?.current?.wind_speed_10m : data.current.wind_speed_10m)).toString()
+      (mph
+        ? imperialData?.current?.wind_speed_10m
+        : data.current.wind_speed_10m) !== undefined
+        ? Math.round(
+            Number(
+              mph
+                ? imperialData?.current?.wind_speed_10m
+                : data.current.wind_speed_10m
+            )
+          ).toString()
         : "--"
     );
     setPrecipitation(
@@ -143,8 +174,8 @@ export default function Home() {
           ? imperialData.current.precipitation.toString()
           : "--"
         : data.current.precipitation !== undefined
-          ? data.current.precipitation.toString()
-          : "--"
+        ? data.current.precipitation.toString()
+        : "--"
     );
     setWeatherCode(data.current.weathercode ?? 0);
     setWindUnit(mph ? "mph" : "km/h");
@@ -154,7 +185,7 @@ export default function Home() {
     setTemperatureMax(data.daily.temperature_2m_max ?? []);
     setDailyWeatherCode(data.daily.weathercode ?? []);
     setHourly(data.hourly ?? { temperature_2m: [], time: [], weathercode: [] });
-  }, [data, imperialData, mph, inch]);
+  }, [data, imperialData, mph, inch, ]);
   const handleClick = () => {
     if (locked) {
       setLocked(false);
@@ -218,7 +249,16 @@ export default function Home() {
 
   return (
     <>
-      <Navbar imperial={imperial} farenheit={farenheit} setFarenheit={setFarenheit} mph={mph} setMph={setMph} inch={inch} setInch={setInch} setImperial={setImperial} />
+      <Navbar
+        imperial={imperial}
+        farenheit={farenheit}
+        setFarenheit={setFarenheit}
+        mph={mph}
+        setMph={setMph}
+        inch={inch}
+        setInch={setInch}
+        setImperial={setImperial}
+      />
       <div className="px-10 mt-10">
         <h1
           className={`text-5xl font-bold ${bricolageGrotesque.className} text-center `}
@@ -227,14 +267,21 @@ export default function Home() {
         </h1>
       </div>
       <form className="flex justify-center gap-3 w-full  mt-12 flex-col sm:flex-row px-5 max-w-3xl m-auto">
-        <input
-          type="text"
-          className="bg-neutral-800 hover:bg-neutral-700 cursor-pointer rounded-xl sm:w-[70%] w-[100%] bg-search  placeholder:text-neutral-200 px-12 p-3 "
-          placeholder="Search for a place"
-        />
+        <div className=" sm:w-[70%] w-[100%] relative">
+          <input
+            type="text"
+            value={input}
+            className="bg-neutral-800 w-[100%] hover:bg-neutral-700 cursor-pointer rounded-xl bg-search  placeholder:text-neutral-200 px-12 p-3 "
+            placeholder="Search for a place"
+            onChange={(e) => handleInput(e.target.value)}
+          />
+          {input.length > 2 && <SearchDropdown searchData = {searchData} setsearchLat={setSearchLat} setInput={setInput} setsearchLon={setSearchLon}/>} 
+          
+        </div>
+
         <input
           type="submit"
-          className="bg-[#4658D9] hover:bg-[#2B1B9C] cursor-pointer rounded-xl sm:w-[30%] w-[100%] p-3"
+          className="bg-[#4658D9] hover:bg-[#2B1B9C] cursor-pointer rounded-xl sm:w-[30%] h-12 w-[100%] p-3"
           value="Search"
         />
       </form>
@@ -253,7 +300,9 @@ export default function Home() {
                 width={100}
                 height={100}
               />
-              <p className="text-8xl font-bold">{`${currentTemp ? currentTemp:0}`}&#176;</p>
+              <p className="text-8xl font-bold">
+                {`${currentTemp ? currentTemp : 0}`}&#176;
+              </p>
             </div>
           </div>
           <div className="flex justify-between gap-5 flex-wrap ">
@@ -321,14 +370,16 @@ export default function Home() {
           <div className="flex h-[83%] flex-col gap-3 ">
             {/* {selectedDay !== today && dayGroups[selectedDay]?.slice(0,8).map((item, index)=><HourlyForecast key={index} time={item.time} temp={Math.round(Number(item.temp)).toString()} weatherCode={item.weathercode} />)}    */}
             {selectedDay === today
-              ? filtered?.map((item, index) => (
-                  <HourlyForecast
-                    key={index}
-                    time={item.time}
-                    temp={Math.round(Number(item.temp)).toString()}
-                    weatherCode={item.weathercode}
-                  />
-                ))
+              ? filtered
+                  ?.slice(0, 8)
+                  ?.map((item, index) => (
+                    <HourlyForecast
+                      key={index}
+                      time={item.time}
+                      temp={Math.round(Number(item.temp)).toString()}
+                      weatherCode={item.weathercode}
+                    />
+                  ))
               : dayGroups[selectedDay]
                   ?.slice(0, 8)
                   .map((item, index) => (
