@@ -90,7 +90,7 @@ export default function Home() {
     weathercode: string[];
   }>({ temperature_2m: [], time: [], weathercode: [] });
 
-  const [searchData, setSearchData] = useState<city[]>([]);
+  const [searchData, setSearchData] = useState<City[]>([]);
 
   useEffect(() => {
     if (input.length > 2) {
